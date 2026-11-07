@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -56,7 +57,26 @@ class LocalTrainingService : Service() {
             }
             ACTION_RESUME -> {
                 pauseRequested.set(false)
-                updateNotification("训练继续运行")
+                if (worker?.isAlive != true) {
+                    val p = getSharedPreferences("local_ai_800_training", MODE_PRIVATE)
+                    val model = p.getString("model_dir", null)
+                    val data = p.getString("dataset_file", null)
+                    if (model != null && data != null) {
+                        modelDir = File(model)
+                        datasetFile = File(data)
+                        checkpointPrefix = File(filesDir, "training/checkpoint/latest")
+                        maxSequence = 128
+                        epochs = 1
+                        resume = true
+                        stopRequested.set(false)
+                        startForeground(NOTIFICATION_ID, buildNotification("正在从本地检查点恢复…"))
+                        p.edit().putBoolean("service_running", true).apply()
+                        acquireWakeLock()
+                        worker = thread(name = "LocalAI800-Training") { runTraining() }
+                    }
+                } else {
+                    updateNotification("训练继续运行")
+                }
                 return START_NOT_STICKY
             }
             ACTION_STOP -> {
@@ -79,6 +99,7 @@ class LocalTrainingService : Service() {
                 currentEpoch = 0
                 currentLine = 0
                 startForeground(NOTIFICATION_ID, buildNotification("准备本地训练…"))
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean("service_running", true).apply()
                 acquireWakeLock()
                 worker = thread(name = "LocalAI800-Training") { runTraining() }
             }
@@ -150,7 +171,10 @@ class LocalTrainingService : Service() {
                     }
                     val battery = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
                     val level = battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-                    val charging = battery.isCharging
+                    val batteryIntent = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                    val batteryStatus = batteryIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+                    val charging = batteryStatus == BatteryManager.BATTERY_STATUS_CHARGING ||
+                        batteryStatus == BatteryManager.BATTERY_STATUS_FULL
                     if (level in 0..14 && !charging) {
                         pauseRequested.set(true)
                         saveCheckpoint(trainer, epoch, lineIndex)
@@ -203,7 +227,9 @@ class LocalTrainingService : Service() {
             try { trainer?.close() } catch (_: Throwable) {}
             session = null
             releaseWakeLock()
-            if (stopRequested.get()) stopSelf()
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putBoolean("service_running", false).apply()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
         }
     }
 
@@ -279,8 +305,7 @@ class LocalTrainingService : Service() {
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, CHANNEL_ID)
-            else @Suppress("DEPRECATION") Notification.Builder(this)
+        val builder = Notification.Builder(this, CHANNEL_ID)
         return builder.setContentTitle("Local AI 800")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
