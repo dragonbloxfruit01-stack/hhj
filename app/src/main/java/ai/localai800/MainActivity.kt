@@ -70,7 +70,7 @@ class MainActivity : Activity() {
             textSize = 15f
             setTextColor(0xFF101828.toInt())
             setPadding(12, 12, 12, 12)
-            textIsSelectable = true
+            setTextIsSelectable(true)
         }
         val chatScroll = ScrollView(this).apply {
             addView(chat)
