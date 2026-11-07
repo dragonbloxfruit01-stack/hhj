@@ -1,6 +1,6 @@
 # Local AI 800
 
-Android 8.0+ local GGUF chat application. Target build: arm64-v8a.
+Android 9.0+ (API 28) local GGUF chat application. Target build: arm64-v8a.
 
 ## Current app features
 
