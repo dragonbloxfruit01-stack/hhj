@@ -32,6 +32,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildUi()
+        restoreSavedModel()
     }
 
     private fun buildUi() {
@@ -126,6 +127,35 @@ class MainActivity : Activity() {
         root.addView(input)
         root.addView(actions)
         setContentView(root)
+    }
+
+
+    private fun restoreSavedModel() {
+        val path = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_MODEL_PATH, null) ?: return
+        val file = File(path)
+        if (!file.isFile || file.length() == 0L) {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(KEY_MODEL_PATH).apply()
+            return
+        }
+        status.text = "发现已保存的 GGUF 模型，正在重新加载…"
+        worker.execute {
+            val cpuThreads = (Runtime.getRuntime().availableProcessors() - 2).coerceIn(2, 6)
+            val result = NativeBridge.nativeLoadModel(file.absolutePath, 2048, cpuThreads)
+            runOnUiThread {
+                if (result.startsWith("ERROR:")) {
+                    modelLoaded = false
+                    status.text = result
+                    sendButton.isEnabled = false
+                } else {
+                    modelFile = file
+                    modelLoaded = true
+                    resetConversation()
+                    status.text = result + "\\n已自动恢复本地模型 · 上下文：2048 tokens"
+                    sendButton.isEnabled = true
+                    chat.text = "本地模型已恢复。可以继续开始新对话。"
+                }
+            }
+        }
     }
 
     private fun chooseModel() {
@@ -240,5 +270,7 @@ class MainActivity : Activity() {
 
     companion object {
         private const val REQUEST_MODEL = 8001
+        private const val PREFS = "local_ai_800"
+        private const val KEY_MODEL_PATH = "model_path"
     }
 }
