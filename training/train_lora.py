@@ -98,6 +98,8 @@ def main():
     parser.add_argument("--gradient-accumulation", type=int, default=8)
     parser.add_argument("--eval-ratio", type=float, default=0.05)
     parser.add_argument("--no-4bit", action="store_true")
+    parser.add_argument("--resume-from-checkpoint", default=None,
+                         help="Checkpoint path, or 'latest' to resume the newest checkpoint in output-dir")
     args = parser.parse_args()
 
     if not torch.cuda.is_available():
@@ -198,20 +200,28 @@ def main():
         gradient_accumulation_steps=args.gradient_accumulation,
         learning_rate=args.learning_rate,
         lr_scheduler_type="cosine", warmup_ratio=0.03, weight_decay=0.01,
-        logging_steps=10, save_strategy="epoch", eval_strategy="epoch",
-        save_total_limit=2, gradient_checkpointing=True,
+        logging_steps=10, save_strategy="steps", save_steps=200,
+        eval_strategy="epoch", save_total_limit=3, gradient_checkpointing=True,
         optim="paged_adamw_8bit" if quant_config is not None else "adamw_torch",
         bf16=torch.cuda.is_bf16_supported(), fp16=not torch.cuda.is_bf16_supported(),
         report_to="none", remove_unused_columns=False,
-        load_best_model_at_end=True, metric_for_best_model="eval_loss",
-        greater_is_better=False,
+        load_best_model_at_end=False,
     )
     trainer = Trainer(
         model=model, args=training_args,
         train_dataset=dataset["train"], eval_dataset=dataset["test"],
         data_collator=AssistantOnlyCollator(tokenizer),
     )
-    trainer.train()
+    resume_checkpoint = args.resume_from_checkpoint
+    if resume_checkpoint == "latest":
+        from transformers.trainer_utils import get_last_checkpoint
+        resume_checkpoint = get_last_checkpoint(args.output_dir)
+        if resume_checkpoint is None:
+            raise SystemExit(f"No checkpoint found in {args.output_dir}")
+        print(f"Resuming from checkpoint: {resume_checkpoint}")
+    elif resume_checkpoint:
+        print(f"Resuming from checkpoint: {resume_checkpoint}")
+    trainer.train(resume_from_checkpoint=resume_checkpoint)
     metrics = trainer.evaluate()
     trainer.save_model(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
