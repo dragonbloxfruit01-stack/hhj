@@ -3,6 +3,7 @@
 import argparse
 import json
 import random
+import re
 from pathlib import Path
 
 from datasets import load_dataset
@@ -17,6 +18,11 @@ def main():
     args = parser.parse_args()
 
     rows = []
+    risky_shell = re.compile(
+        r"(^|[;&|\\s])(rm\\s+-rf|mkfs(?:\\.|\\s)|dd\\s+if=|shutdown|reboot|"
+        r"chmod\\s+-R\\s+777|curl[^\\n]*\\|\\s*(sh|bash)|wget[^\\n]*\\|\\s*(sh|bash))",
+        re.IGNORECASE,
+    )
 
     # Apache-2.0 tagged CodeAlpaca mirror: instruction/input/output schema.
     code = load_dataset("flwrlabs/code-alpaca-20k", split="train")
@@ -46,7 +52,7 @@ def main():
             continue
         command = str(response.get("value", "")).strip()
         kind = str(response.get("kind", "")).strip().upper()
-        if request and command and kind == "COMMAND":
+        if request and command and kind == "COMMAND" and not risky_shell.search(command):
             shell_rows.append({
                 "instruction": "Write a safe Linux Bash command for this task. Explain assumptions if needed: " + request,
                 "output": command,
