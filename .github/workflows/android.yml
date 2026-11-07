@@ -27,6 +27,9 @@ jobs:
           ref: main
           path: MobileFineTuner
 
+      - name: Apply mobile training extensions
+        run: python3 training/mobile/patch_mft.py
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
