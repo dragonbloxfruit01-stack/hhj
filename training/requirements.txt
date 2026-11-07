@@ -1,8 +1,7 @@
-torch
-transformers
-datasets
-peft
-trl
-accelerate
-bitsandbytes
-sentencepiece
+# In Google Colab, install a CUDA-compatible PyTorch build first.
+transformers>=4.51.3,<5
+datasets>=3.5.0,<4
+peft>=0.15.2,<1
+accelerate>=1.6.0,<2
+bitsandbytes>=0.45.5
+safetensors
