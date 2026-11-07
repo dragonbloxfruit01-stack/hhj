@@ -29,18 +29,26 @@ r'''void Adam::save_state(const std::string& path, const std::vector<TensorPtr>&
     f.write(reinterpret_cast<const char*>(&adam_config_.amsgrad), sizeof(bool));
     uint64_t count = params.size(); f.write(reinterpret_cast<const char*>(&count), sizeof(count));
     for (const auto& p : params) {
+        if (!p) throw std::runtime_error("Null Adam checkpoint parameter");
         auto it = states_.find(p);
-        if (!p || it == states_.end()) throw std::runtime_error("Adam state missing");
-        const auto& st = it->second;
+        const size_t step = it == states_.end() ? 0 : it->second.step;
         uint32_t rank = static_cast<uint32_t>(p->shape().size());
         f.write(reinterpret_cast<const char*>(&rank), sizeof(rank));
         for (auto d : p->shape()) f.write(reinterpret_cast<const char*>(&d), sizeof(d));
-        f.write(reinterpret_cast<const char*>(&st.step), sizeof(st.step));
+        f.write(reinterpret_cast<const char*>(&step), sizeof(step));
         uint64_t n = static_cast<uint64_t>(p->numel());
         f.write(reinterpret_cast<const char*>(&n), sizeof(n));
-        f.write(reinterpret_cast<const char*>(st.m.at(0)->data<float>()), n * sizeof(float));
-        f.write(reinterpret_cast<const char*>(st.v.at(0)->data<float>()), n * sizeof(float));
-        if (adam_config_.amsgrad) f.write(reinterpret_cast<const char*>(st.v_hat.at(0)->data<float>()), n * sizeof(float));
+        if (it == states_.end()) {
+            std::vector<float> zeros(static_cast<size_t>(n), 0.0f);
+            f.write(reinterpret_cast<const char*>(zeros.data()), n * sizeof(float));
+            f.write(reinterpret_cast<const char*>(zeros.data()), n * sizeof(float));
+            if (adam_config_.amsgrad) f.write(reinterpret_cast<const char*>(zeros.data()), n * sizeof(float));
+        } else {
+            const auto& st = it->second;
+            f.write(reinterpret_cast<const char*>(st.m.at(0)->data<float>()), n * sizeof(float));
+            f.write(reinterpret_cast<const char*>(st.v.at(0)->data<float>()), n * sizeof(float));
+            if (adam_config_.amsgrad) f.write(reinterpret_cast<const char*>(st.v_hat.at(0)->data<float>()), n * sizeof(float));
+        }
     }
     if (!f.good()) throw std::runtime_error("Adam checkpoint write failed");
 }
