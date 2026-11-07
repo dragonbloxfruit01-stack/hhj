@@ -192,4 +192,19 @@ Java_com_mobilefinetuner_sdk_MobileFineTuner_nativeClose(JNIEnv* env, jclass, jl
     if anchor not in s: raise RuntimeError("JNI close anchor missing")
     cpp.write_text(s.replace(anchor,addition,1))
 
+replace("android-visualizer/mft-sdk/src/main/cpp/mobile_finetuner_jni.cpp",
+"#include <vector>\n",
+"#include <vector>\n#include <unordered_map>\n")
+replace("android-visualizer/mft-sdk/src/main/cpp/mobile_finetuner_jni.cpp",
+"namespace {\n\nstruct NativeSession",
+"namespace {\nstd::mutex g_tokenizer_mutex;\nstd::unordered_map<std::string, std::unique_ptr<ops::Tokenizer>> g_tokenizers;\n\nstruct NativeSession")
+replace("android-visualizer/mft-sdk/src/main/cpp/mobile_finetuner_jni.cpp",
+'''        auto tokenizer=ops::TokenizerFactory::from_pretrained(to_string(env,modelDir));
+        auto ids=tokenizer->encode(to_string(env,text));''',
+'''        const std::string dir=to_string(env,modelDir);
+        std::lock_guard<std::mutex> lock(g_tokenizer_mutex);
+        auto& tokenizer=g_tokenizers[dir];
+        if(!tokenizer) tokenizer=ops::TokenizerFactory::from_pretrained(dir);
+        auto ids=tokenizer->encode(to_string(env,text));''')
+
 print("MobileFineTuner mobile training extensions applied.")
