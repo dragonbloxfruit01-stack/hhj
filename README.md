@@ -20,10 +20,13 @@ The workflow fetches llama.cpp tag `b12182` during the CMake build. The first na
 
 ## Model
 
-The APK does not bundle model weights. Import a compatible **chat/instruct GGUF** file after installing the app. A practical starting point is Qwen3-0.6B GGUF Q4_K_M (roughly 0.5 GB). The upstream Qwen model is Apache-2.0; check the exact quantized repository and model card before redistribution.
+The APK does not bundle model weights. Import a compatible **chat/instruct GGUF** file after installing the app. A practical starting point is the Qwen3-0.6B Q4_K_M GGUF (roughly 0.5 GB). One public quantized copy lists the file as Qwen3-0.6B-Q4_K_M.gguf; verify its model card and license before downloading or redistributing.
 
-- Official model family: https://huggingface.co/Qwen/Qwen3-0.6B
-- Official GGUF repository: https://huggingface.co/Qwen/Qwen3-0.6B-GGUF
+- Upstream model: https://huggingface.co/Qwen/Qwen3-0.6B
+- Upstream GGUF collection: https://huggingface.co/Qwen/Qwen3-0.6B-GGUF
+- Example Q4_K_M quantized collection: https://huggingface.co/tensorblock/Qwen_Qwen3-0.6B-GGUF
+
+Download the GGUF file to the phone, then tap “选择 / 导入 GGUF 模型” in the app. The app copies it into private storage and remembers the selected model for the next launch.
 
 A 0.6B model is a small local assistant, not a frontier coding model. The 800 MB target is a storage budget, not a guarantee of reasoning or coding quality. Larger models need more storage and RAM.
 
