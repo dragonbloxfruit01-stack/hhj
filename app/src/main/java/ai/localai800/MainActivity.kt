@@ -147,7 +147,7 @@ class MainActivity : Activity() {
         worker.execute {
             try {
                 val modelsDir = File(filesDir, "models").apply { mkdirs() }
-                val destination = File(modelsDir, "selected-model.gguf")
+                val destination = File(modelsDir, "model-${System.currentTimeMillis()}.gguf")
                 contentResolver.openInputStream(uri).use { source ->
                     requireNotNull(source) { "无法打开所选文件" }
                     destination.outputStream().use { target -> source.copyTo(target, 1024 * 1024) }
@@ -157,7 +157,9 @@ class MainActivity : Activity() {
                     status.text = "文件已导入：${destination.name}（${destination.length() / (1024 * 1024)} MB），正在加载…"
                 }
                 val cpuThreads = (Runtime.getRuntime().availableProcessors() - 2).coerceIn(2, 6)
+                val previousModel = modelFile
                 val result = NativeBridge.nativeLoadModel(destination.absolutePath, 2048, cpuThreads)
+                if (previousModel != null && previousModel != destination) previousModel.delete()
                 runOnUiThread {
                     if (result.startsWith("ERROR:")) {
                         modelLoaded = false
