@@ -136,25 +136,48 @@ def main():
     messages = load_jsonl(args.train_file)
     encoded = []
     skipped = 0
+    if not tokenizer.is_fast:
+        raise RuntimeError("Assistant-only masking requires a fast tokenizer with offset mappings.")
+
     for example in messages:
-        result = tokenizer.apply_chat_template(
-            example, tokenize=True, add_generation_prompt=False,
-            return_dict=True, return_assistant_tokens_mask=True,
+        # Qwen3's stock chat template may not define {% generation %}. Instead,
+        # locate each assistant message's content in the rendered conversation,
+        # then map its character span to token offsets. This avoids training on
+        # system/user prompt tokens and fails closed if the template rewrites content.
+        rendered = tokenizer.apply_chat_template(
+            example, tokenize=False, add_generation_prompt=False
+        )
+        assistant_spans = []
+        for message_index, message in enumerate(example):
+            if message["role"] != "assistant":
+                continue
+            marker = f"LOCALAI800_ASSISTANT_SPAN_{message_index}_END"
+            marked_messages = [dict(item) for item in example]
+            marked_messages[message_index]["content"] = marker
+            marked_rendered = tokenizer.apply_chat_template(
+                marked_messages, tokenize=False, add_generation_prompt=False
+            )
+            if marked_rendered.count(marker) != 1:
+                raise RuntimeError("Could not uniquely locate assistant content in chat template.")
+            prefix, suffix = marked_rendered.split(marker, 1)
+            if rendered != prefix + message["content"] + suffix:
+                raise RuntimeError(
+                    "Chat template transforms assistant content; safe offset masking "
+                    "cannot be guaranteed. Refusing to train."
+                )
+            assistant_spans.append((len(prefix), len(prefix) + len(message["content"])))
+
+        tokenized = tokenizer(
+            rendered, add_special_tokens=False, return_offsets_mapping=True,
             truncation=True, max_length=args.max_length,
         )
-        assistant_mask = result.get("assistant_masks")
-        if assistant_mask is None:
-            assistant_mask = result.get("assistant_mask")
-        if assistant_mask is None:
-            raise RuntimeError(
-                "Tokenizer chat template does not expose assistant token masks. "
-                "Use a compatible Instruct model/template; refusing to train on user prompt tokens."
-            )
-        ids = result["input_ids"]
-        if hasattr(ids, "tolist"):
-            ids = ids.tolist()
-        if hasattr(assistant_mask, "tolist"):
-            assistant_mask = assistant_mask.tolist()
+        ids = tokenized["input_ids"]
+        offsets = tokenized["offset_mapping"]
+        assistant_mask = [
+            int(any(start < span_end and end > span_start
+                    for span_start, span_end in assistant_spans) and end > start)
+            for start, end in offsets
+        ]
         if len(ids) != len(assistant_mask) or not any(assistant_mask):
             skipped += 1
             continue
