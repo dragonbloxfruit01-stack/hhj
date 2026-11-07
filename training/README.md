@@ -22,7 +22,7 @@ The Q4_K_M GGUF is for phone inference. Do not use the quantized GGUF as the LoR
 5. ELF, ARM64, shared-library dependencies and dump analysis.
 6. Careful technical reasoning and uncertainty handling.
 
-The data-preparation script combines public code and shell instruction data with a small set of original Chinese technical examples. This is only a starter dataset, **not enough by itself to produce a strong specialist model**. Add more reviewed Chinese C/C++/Android/ELF instruction-answer examples and keep a separate held-out evaluation set.
+The data-preparation script combines public code and shell instruction data with 42 original Chinese technical examples. This is only a starter dataset, **not enough by itself to produce a strong specialist model**. Add more reviewed Chinese C/C++/Android/ELF instruction-answer examples and keep a separate held-out evaluation set.
 
 ## Data and licensing
 
@@ -56,7 +56,7 @@ python training/merge_adapter.py \
   --adapter outputs/localai800-lora \
   --output-dir outputs/localai800-merged
 
-git clone --depth 1 --branch b12182 https://github.com/ggml-org/llama.cpp.git
+git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
 pip install -r llama.cpp/requirements/requirements-convert_hf_to_gguf.txt
 cmake -S llama.cpp -B llama.cpp/build
 cmake --build llama.cpp/build --target llama-quantize -j2
