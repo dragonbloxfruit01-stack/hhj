@@ -19,8 +19,8 @@ def main():
 
     rows = []
     risky_shell = re.compile(
-        r"(^|[;&|\\s])(rm\\s+-rf|mkfs(?:\\.|\\s)|dd\\s+if=|shutdown|reboot|"
-        r"chmod\\s+-R\\s+777|curl[^\\n]*\\|\\s*(sh|bash)|wget[^\\n]*\\|\\s*(sh|bash))",
+        r"(^|[;&|\s])(rm\s+-rf|mkfs(?:\.|\s)|dd\s+if=|shutdown|reboot|"
+        r"chmod\s+-R\s+777|curl[^\n]*\|\s*(sh|bash)|wget[^\n]*\|\s*(sh|bash))",
         re.IGNORECASE,
     )
 
