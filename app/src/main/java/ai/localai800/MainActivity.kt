@@ -150,7 +150,7 @@ class MainActivity : Activity() {
                     modelFile = file
                     modelLoaded = true
                     resetConversation()
-                    status.text = result + "\\n已自动恢复本地模型 · 上下文：2048 tokens"
+                    status.text = result + "\n已自动恢复本地模型 · 上下文：2048 tokens"
                     sendButton.isEnabled = true
                     chat.text = "本地模型已恢复。可以继续开始新对话。"
                 }
@@ -183,7 +183,6 @@ class MainActivity : Activity() {
                     destination.outputStream().use { target -> source.copyTo(target, 1024 * 1024) }
                 }
                 runOnUiThread {
-                    modelFile = destination
                     status.text = "文件已导入：${destination.name}（${destination.length() / (1024 * 1024)} MB），正在加载…"
                 }
                 val cpuThreads = (Runtime.getRuntime().availableProcessors() - 2).coerceIn(2, 6)
@@ -193,10 +192,15 @@ class MainActivity : Activity() {
                 runOnUiThread {
                     if (result.startsWith("ERROR:")) {
                         modelLoaded = false
+                        modelFile = null
+                        destination.delete()
+                        getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(KEY_MODEL_PATH).apply()
                         status.text = result
                         sendButton.isEnabled = false
                     } else {
                         modelLoaded = true
+                        modelFile = destination
+                        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_MODEL_PATH, destination.absolutePath).apply()
                         resetConversation()
                         status.text = result + "\n上下文：2048 tokens · CPU 推理 · 模型文件保存在应用私有目录"
                         sendButton.isEnabled = true
