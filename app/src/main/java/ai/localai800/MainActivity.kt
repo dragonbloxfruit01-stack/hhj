@@ -196,9 +196,13 @@ class MainActivity : Activity() {
 
         val roles = messages.map { it.role }.toTypedArray()
         val contents = messages.map { it.content }.toTypedArray()
+        appendChat("\n\nAI：\n")
         worker.execute {
+            val callback = TokenCallback { piece ->
+                runOnUiThread { appendChat(piece) }
+            }
             val answer = try {
-                NativeBridge.nativeGenerate(roles, contents, 384, 0.7f)
+                NativeBridge.nativeGenerate(roles, contents, 384, 0.7f, callback)
             } catch (e: Exception) {
                 "ERROR: ${e.message}"
             }
@@ -206,7 +210,6 @@ class MainActivity : Activity() {
                 val failed = answer.startsWith("ERROR:")
                 if (!failed && answer.isNotBlank()) {
                     messages.add(Message("assistant", answer))
-                    appendChat("\n\nAI：\n$answer")
                 } else {
                     appendChat("\n\n系统：\n$answer")
                 }
