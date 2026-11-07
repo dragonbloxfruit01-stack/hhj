@@ -1,18 +1,15 @@
-# Local AI 800 — training plan
+# Local AI 800 — training pipeline
 
 ## Current status
 
-No custom training has been run and no fine-tuned weights are included. The Android application currently runs an imported GGUF model using llama.cpp. Fine-tuning is a separate phase that requires a cloud GPU.
+No custom training has been run and no fine-tuned weights are included. The Android app runs an imported GGUF model using llama.cpp. Fine-tuning is a separate cloud-GPU task.
 
-## Proposed base model
+## Base model
 
-Start with Qwen3-0.6B-Instruct as a compact Chinese-capable baseline. Verify the model card and Apache-2.0 license for the exact checkpoint and any converted/quantized copy. The initial Android test can use a Q4_K_M GGUF; quantized weights are for inference, not the preferred fine-tuning input.
+Start with Qwen3-0.6B-Instruct / Qwen3-0.6B. Confirm the exact model card and license before use. The unquantized checkpoint is the training source; GGUF Q4_K_M is intended for phone inference, not for LoRA training.
 
-## Data policy and focus
+## Dataset focus
 
-Use public datasets only when their licenses permit the intended use. Record source, license, language, and filtering metadata. Remove secrets and personal data. Split train/validation sets by source to reduce leakage.
-
-Prioritize:
 - Chinese instruction following and open conversation
 - C and C++ programming, compiler diagnostics and debugging
 - POSIX / Android shell scripting
@@ -20,14 +17,43 @@ Prioritize:
 - ELF, ARM64 and dump-file analysis
 - Technical reasoning and safe troubleshooting
 
-## Fine-tuning plan
+Use public datasets only when their licenses permit the intended training and redistribution. Record source, license, attribution and filtering metadata. Remove secrets and personal data. Keep validation examples separate from training sources. See data/FORMAT.md for the accepted JSONL schema.
 
-1. Download the base model and tokenizer on a cloud GPU.
-2. Normalize and deduplicate licensed public instruction data.
-3. Create supervised conversation examples with explicit role boundaries.
-4. Run LoRA/QLoRA supervised fine-tuning; keep a held-out validation split.
-5. Evaluate on unseen Chinese C/C++ and shell tasks, not just training loss.
-6. Merge or retain adapters as supported by the model/runtime.
-7. Convert to GGUF and quantize; compare output quality, file size, latency and peak RAM on the target phone.
+## Cloud GPU workflow
 
-An 800 MB target is a storage budget, not a quality guarantee. The 0.6B baseline is small and may make mistakes on complex reverse engineering or large code tasks. Measure before claiming capability.
+The scripts target a CUDA-enabled Linux notebook or cloud GPU. Install a CUDA-compatible PyTorch build, then:
+
+~~~bash
+pip install -r training/requirements.txt
+python training/validate_dataset.py data/train.jsonl
+
+python training/train_lora.py \
+  --model Qwen/Qwen3-0.6B \
+  --train-file data/train.jsonl \
+  --output-dir outputs/localai800-lora \
+  --epochs 2 \
+  --max-length 2048
+~~~
+
+The default uses 4-bit NF4 QLoRA, rank 16, gradient checkpointing and a small batch. Adjust batch size, gradient accumulation and sequence length to fit the GPU. The starter script reports training loss; it does not certify model quality. Evaluate on a held-out set of C/C++, Shell, Chinese and Android tasks before using the adapter.
+
+## Merge and quantize
+
+After evaluation:
+
+~~~bash
+python training/merge_adapter.py \
+  --adapter outputs/localai800-lora \
+  --output-dir outputs/localai800-merged
+
+bash training/quantize_to_gguf.sh \
+  outputs/localai800-merged \
+  /path/to/llama.cpp \
+  Q4_K_M
+~~~
+
+Copy the resulting GGUF to the phone and import it in Local AI 800.
+
+## Size and performance
+
+An 800 MB target is a storage budget, not a quality guarantee. Quantization changes file size and can affect accuracy. The 0.6B baseline is small and may make mistakes on complex reverse engineering or long code tasks. Measure quality, latency and peak memory on the target device.
