@@ -13,6 +13,7 @@ android {
         targetSdk = 35
         versionCode = 2
         versionName = "0.2.0"
+        ndkVersion = "27.0.12077973"
         ndk { abiFilters += listOf("arm64-v8a") }
         externalNativeBuild {
             cmake { cppFlags += listOf("-std=c++17", "-O3") }
