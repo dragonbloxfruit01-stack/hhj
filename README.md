@@ -1,22 +1,39 @@
 # Local AI 800
 
-Android local-AI starter project for OPPO Reno14 Pro / Android 16.
+Android 8.0+ local GGUF chat application. Target build: arm64-v8a.
 
-## Current implementation status
+## Current app features
 
-This repository is the Android application scaffold and training setup. It is **not yet a completed offline AI app**: the current native bridge is a placeholder until a GGUF inference backend (such as llama.cpp) is integrated.
-
-## Planned capabilities
-
-- Chinese conversation and technical assistance
-- C/C++, Shell, Android NDK and APK build guidance
-- Local GGUF model selection
-- Offline inference after the inference backend and model are added
+- Import a GGUF model using Android's document picker (copied to app-private storage)
+- Load the model through the llama.cpp C API
+- Apply the model's built-in chat template
+- Multi-turn Chinese chat with system instructions
+- CPU inference, configurable native thread count, 2K context
+- Stop generation and clear conversation
+- No network permission or cloud inference in the app
 
 ## Build
 
-The Android debug APK is built by the GitHub Actions workflow after the project files are committed.
+GitHub Actions builds a debug APK on pushes to `main`. Open the repository's **Actions** tab, select **Android Debug APK**, and download the `LocalAI800-debug-apk` artifact after a successful run.
 
-## Model and training
+The workflow fetches llama.cpp tag `b12182` during the CMake build. The first native build takes longer because it compiles the inference engine.
 
-See [training/README.md](training/README.md) for the proposed open-model fine-tuning workflow. Training requires a suitable cloud GPU; the Android phone is intended for inference, not full model training.
+## Model
+
+The APK does not bundle model weights. Import a compatible **chat/instruct GGUF** file after installing the app. A practical starting point is Qwen3-0.6B GGUF Q4_K_M (roughly 0.5 GB). The upstream Qwen model is Apache-2.0; check the exact quantized repository and model card before redistribution.
+
+- Official model family: https://huggingface.co/Qwen/Qwen3-0.6B
+- Official GGUF repository: https://huggingface.co/Qwen/Qwen3-0.6B-GGUF
+
+A 0.6B model is a small local assistant, not a frontier coding model. The 800 MB target is a storage budget, not a guarantee of reasoning or coding quality. Larger models need more storage and RAM.
+
+## Important limitations
+
+- This build uses llama.cpp CPU inference. Vulkan/GPU acceleration has not been enabled or device-validated.
+- The app uses a 2048-token context and a 384-token response limit.
+- Model quality depends on the selected GGUF. No custom fine-tuning has been completed yet.
+- Build success does not equal device validation. Test on the target OPPO device before relying on it.
+
+## Training
+
+See [training/README.md](training/README.md). Training is a separate cloud-GPU task; it is not performed by the Android app.
