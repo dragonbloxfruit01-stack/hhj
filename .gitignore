@@ -1,0 +1,11 @@
+.gradle/
+.idea/
+local.properties
+**/build/
+*.iml
+*.gguf
+*.safetensors
+*.bin
+outputs/
+__pycache__/
+*.pyc
