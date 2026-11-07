@@ -1,30 +1,33 @@
 # Local AI 800 — training plan
 
-This directory documents the proposed fine-tuning workflow. It does not contain trained weights.
+## Current status
 
-## Base model
+No custom training has been run and no fine-tuned weights are included. The Android application currently runs an imported GGUF model using llama.cpp. Fine-tuning is a separate phase that requires a cloud GPU.
 
-Evaluate a permissively licensed compact Chinese-capable open model (for example, a Qwen 0.6B-class instruct model). Verify the exact model card and license before use.
+## Proposed base model
 
-## Data
+Start with Qwen3-0.6B-Instruct as a compact Chinese-capable baseline. Verify the model card and Apache-2.0 license for the exact checkpoint and any converted/quantized copy. The initial Android test can use a Q4_K_M GGUF; quantized weights are for inference, not the preferred fine-tuning input.
 
-Use public datasets only when their licenses permit the intended use. Keep source, license, language, and filtering metadata for every dataset. Remove secrets and personal data. Split train/validation sets by source to reduce leakage.
+## Data policy and focus
 
-## Focus areas
+Use public datasets only when their licenses permit the intended use. Record source, license, language, and filtering metadata. Remove secrets and personal data. Split train/validation sets by source to reduce leakage.
 
+Prioritize:
 - Chinese instruction following and open conversation
-- C and C++ programming
+- C and C++ programming, compiler diagnostics and debugging
 - POSIX / Android shell scripting
 - Android NDK, JNI, Gradle and APK packaging
 - ELF, ARM64 and dump-file analysis
-- Technical reasoning and troubleshooting
+- Technical reasoning and safe troubleshooting
 
-## Fine-tuning
+## Fine-tuning plan
 
-Use a cloud GPU for LoRA/QLoRA supervised fine-tuning. Validate on held-out Chinese coding and technical tasks. Merge or retain adapters as supported by the selected runtime, then quantize to a mobile-supported GGUF format.
+1. Download the base model and tokenizer on a cloud GPU.
+2. Normalize and deduplicate licensed public instruction data.
+3. Create supervised conversation examples with explicit role boundaries.
+4. Run LoRA/QLoRA supervised fine-tuning; keep a held-out validation split.
+5. Evaluate on unseen Chinese C/C++ and shell tasks, not just training loss.
+6. Merge or retain adapters as supported by the model/runtime.
+7. Convert to GGUF and quantize; compare output quality, file size, latency and peak RAM on the target phone.
 
-An 800 MB target is a storage budget, not a quality guarantee. Actual size depends on architecture, quantization, tokenizer and metadata. Measure quality and memory use on the target phone.
-
-## Android integration status
-
-The Android app currently contains only a JNI status stub. A real offline chat app still needs a compatible inference backend (such as llama.cpp), model loading, token streaming, cancellation, context management and device-memory testing.
+An 800 MB target is a storage budget, not a quality guarantee. The 0.6B baseline is small and may make mistakes on complex reverse engineering or large code tasks. Measure before claiming capability.
