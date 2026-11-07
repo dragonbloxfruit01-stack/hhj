@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "ai.localai800"
-        minSdk = 28
+        minSdk = 29
         targetSdk = 35
         versionCode = 3
         versionName = "0.3.0-training-foundation"
