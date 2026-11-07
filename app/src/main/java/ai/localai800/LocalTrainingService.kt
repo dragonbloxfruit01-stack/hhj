@@ -155,10 +155,13 @@ class LocalTrainingService : Service() {
                 val start = if (epoch == currentEpoch) currentLine else 0
                 for (lineIndex in start until rows.size) {
                     if (stopRequested.get()) break
-                    while (pauseRequested.get() && !stopRequested.get()) {
+                    if (pauseRequested.get() && !stopRequested.get()) {
                         saveCheckpoint(trainer, epoch, lineIndex)
                         updateNotification("已暂停 · 第 ${currentStep} 步")
-                        SystemClock.sleep(1000)
+                        while (pauseRequested.get() && !stopRequested.get()) {
+                            SystemClock.sleep(1000)
+                        }
+                        if (!stopRequested.get()) updateNotification("训练继续运行")
                     }
                     if (stopRequested.get()) break
 
