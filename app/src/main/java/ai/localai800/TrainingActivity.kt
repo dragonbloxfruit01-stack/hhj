@@ -59,7 +59,7 @@ class TrainingActivity : Activity() {
             setOnClickListener {
                 val i = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "application/json"
+                    type = "*/*"
                 }
                 startActivityForResult(i, PICK_DATA)
             }
@@ -206,7 +206,7 @@ class TrainingActivity : Activity() {
             val mimeCol = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
             while (cursor.moveToNext()) {
                 val id = cursor.getString(idCol)
-                val name = cursor.getString(nameCol).orEmpty().replace(Regex("[/\\\\\\u0000-\\u001F]"), "_")
+                val name = cursor.getString(nameCol).orEmpty().replace("/", "_").replace("\\\\", "_")
                 if (name.isBlank() || name == "." || name == "..") continue
                 val mime = cursor.getString(mimeCol)
                 val target = File(destination, name)
