@@ -65,6 +65,11 @@ class MainActivity : Activity() {
             setOnClickListener { chooseModel() }
         }
 
+        val training = Button(this).apply {
+            text = "本地训练中心（手机后台训练）"
+            setOnClickListener { startActivity(Intent(this@MainActivity, TrainingActivity::class.java)) }
+        }
+
         chat = TextView(this).apply {
             text = "欢迎使用 Local AI 800。\n\n先导入 GGUF 模型，然后就可以离线聊天。"
             textSize = 15f
@@ -120,6 +125,7 @@ class MainActivity : Activity() {
         root.addView(subtitle)
         root.addView(status)
         root.addView(choose)
+        root.addView(training)
         root.addView(chatScroll, LinearLayout.LayoutParams(-1, 0, 1f).apply {
             topMargin = 12
             bottomMargin = 8
