@@ -1,0 +1,97 @@
+{
+  "mapId": "zero_dam",
+  "displayName": "零号大坝",
+  "mode": "普通行动",
+  "version": 1,
+  "dataQuality": "规划草案；未校准游戏坐标；路线连接为示例图，不代表实时局内通路",
+  "regions": [
+    {
+      "id": "visitor",
+      "name": "访客中心",
+      "risk": 2,
+      "loot": [
+        "补给",
+        "医疗"
+      ],
+      "note": "低风险候选区域；物资刷新以实际对局为准"
+    },
+    {
+      "id": "small_substation",
+      "name": "小变电站",
+      "risk": 2,
+      "loot": [
+        "电子",
+        "工具"
+      ],
+      "note": "低风险候选区域"
+    },
+    {
+      "id": "river",
+      "name": "河道外围",
+      "risk": 2,
+      "loot": [
+        "野外补给"
+      ],
+      "note": "仅作外围路线规划"
+    },
+    {
+      "id": "cement",
+      "name": "水泥厂",
+      "risk": 3,
+      "loot": [
+        "工具",
+        "武器物资"
+      ],
+      "note": "中等风险候选区域"
+    },
+    {
+      "id": "barracks",
+      "name": "军营",
+      "risk": 3,
+      "loot": [
+        "补给",
+        "电子"
+      ],
+      "note": "中等风险候选区域"
+    },
+    {
+      "id": "administration",
+      "name": "行政区",
+      "risk": 4,
+      "loot": [
+        "电子",
+        "保险柜"
+      ],
+      "note": "高热度候选区域；避开优先"
+    },
+    {
+      "id": "main_substation",
+      "name": "主变电站",
+      "risk": 4,
+      "loot": [
+        "电子",
+        "工具"
+      ],
+      "note": "高热度候选区域；避开优先"
+    }
+  ],
+  "exits": [
+    {
+      "id": "exit_a",
+      "name": "撤离点 A",
+      "verified": false,
+      "condition": "待按当前版本地图核实"
+    },
+    {
+      "id": "exit_b",
+      "name": "撤离点 B",
+      "verified": false,
+      "condition": "待按当前版本地图核实"
+    }
+  ],
+  "spawns": [],
+  "coordinateSystem": {
+    "status": "not_calibrated",
+    "note": "需导入对应 Garena 版本的地图底图后再填入真实坐标"
+  }
+}
