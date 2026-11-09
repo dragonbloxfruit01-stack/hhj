@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_description">读取当前屏幕中可访问的文字，用于显示对局状态提示；不会自动点击或操控游戏。</string>
+</resources>
