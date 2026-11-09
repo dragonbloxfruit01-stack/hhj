@@ -2,6 +2,8 @@ package com.jiahao.delta.runner
 
 import android.app.Activity
 import android.os.Bundle
+import android.content.Intent
+import android.provider.Settings
 import android.graphics.Typeface
 import android.view.Gravity
 import android.widget.ArrayAdapter
@@ -42,6 +44,7 @@ class MainActivity : Activity() {
     private lateinit var start: Spinner
     private lateinit var destination: Spinner
     private lateinit var output: TextView
+    private lateinit var observerStatus: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +68,17 @@ class MainActivity : Activity() {
         }
         root.addView(title)
         root.addView(subtitle)
+        observerStatus = TextView(this).apply {
+            text = observerSummary()
+            textSize = 13f
+            setTextColor(0xFF175CD3.toInt())
+            setPadding(0, 4, 0, 8)
+        }
+        root.addView(observerStatus)
+        root.addView(Button(this).apply {
+            text = "开启屏幕文字识别服务"
+            setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+        })
         root.addView(label("起点区域"))
         start = spinner()
         root.addView(start)
@@ -101,6 +115,19 @@ class MainActivity : Activity() {
         root.addView(note)
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::observerStatus.isInitialized) observerStatus.text = observerSummary()
+    }
+
+    private fun observerSummary(): String {
+        val p = getSharedPreferences("screen_observer", MODE_PRIVATE)
+        val state = p.getString("state", "尚未启用")
+        val time = p.getLong("updated_at", 0L)
+        val freshness = if (time == 0L) "尚无识别记录" else "最近更新：" + ((System.currentTimeMillis() - time) / 1000) + " 秒前"
+        return "屏幕观察：" + state + "\n" + freshness
     }
 
     private fun label(value: String) = TextView(this).apply {
