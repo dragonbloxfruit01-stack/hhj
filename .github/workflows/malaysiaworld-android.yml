@@ -63,7 +63,7 @@ jobs:
         uses: docker://barichello/godot-ci:4.3
         with:
           args: >
-            bash -lc "cd MalaysiaWorld &&
+            bash -lc "export HOME=/root && cd MalaysiaWorld &&
             godot --headless --verbose --path . --export-debug Android build/MalaysiaWorld.apk"
 
       - name: Upload APK artifact
