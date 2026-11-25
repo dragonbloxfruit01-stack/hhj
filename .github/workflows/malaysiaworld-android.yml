@@ -59,11 +59,24 @@ jobs:
           EOF
           sed -i '/package\/s coincident/d' export_presets.cfg
 
+      - name: Configure Godot Android export environment
+        uses: docker://barichello/godot-ci:4.3
+        with:
+          args: >
+            bash -lc "
+            mkdir -p /github/home/.local/share/godot/export_templates /github/home/.config/godot &&
+            cp -a /root/.local/share/godot/export_templates/4.3.stable /github/home/.local/share/godot/export_templates/ &&
+            cp -a /root/.config/godot/. /github/home/.config/godot/ &&
+            cp /root/debug.keystore /github/home/debug.keystore &&
+            printf '\\nexport/android/java_sdk_path = \\\"/usr/lib/jvm/java-17-openjdk-amd64\\\"\\nexport/android/android_sdk_path = \\\"/usr/lib/android-sdk\\\"\\nexport/android/debug_keystore = \\\"/github/home/debug.keystore\\\"\\nexport/android/debug_keystore_user = \\\"androiddebugkey\\\"\\nexport/android/debug_keystore_pass = \\\"android\\\"\\n' >> /github/home/.config/godot/editor_settings-4.3.tres &&
+            test -f /github/home/.local/share/godot/export_templates/4.3.stable/android_debug.apk &&
+            test -f /github/home/.local/share/godot/export_templates/4.3.stable/android_release.apk
+            "
       - name: Export APK with Godot 4.3
         uses: docker://barichello/godot-ci:4.3
         with:
           args: >
-            bash -lc "export HOME=/root && cd MalaysiaWorld &&
+            bash -lc "export HOME=/github/home && cd MalaysiaWorld &&
             godot --headless --verbose --path . --export-debug Android build/MalaysiaWorld.apk"
 
       - name: Upload APK artifact
