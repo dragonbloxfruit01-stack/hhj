@@ -1,0 +1,73 @@
+name: Malaysia World Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "MalaysiaWorld/**"
+      - ".github/workflows/malaysiaworld-android.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Godot project
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+          cd MalaysiaWorld
+          if [ -f project.zip ]; then
+            unzip -o project.zip -d .
+          fi
+          test -f project.godot || { echo "Missing MalaysiaWorld/project.godot. Upload the v0.3 project ZIP as MalaysiaWorld/project.zip."; exit 1; }
+          mkdir -p build
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+          name="Android"
+          platform="Android"
+          runnable=true
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/MalaysiaWorld.apk"
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          encrypt_pck=false
+          encrypt_directory=false
+
+          [preset.0.options]
+          custom_template/debug=""
+          custom_template/release=""
+          gradle_build/use_gradle_build=false
+          package/unique_name="com.malaysiaworld.game"
+          package/name="Malaysia World"
+          package/s coincident="Malaysia World"
+          version/code=3
+          version/name="0.3.0"
+          architectures/armeabi-v7a=false
+          architectures/arm64-v8a=true
+          EOF
+          sed -i '/package\/s coincident/d' export_presets.cfg
+
+      - name: Export APK with Godot 4.3
+        uses: docker://barichello/godot-ci:4.3.0
+        with:
+          args: >
+            bash -lc "cd MalaysiaWorld &&
+            godot --headless --verbose --path . --export-debug Android build/MalaysiaWorld.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MalaysiaWorld-Android-APK
+          path: MalaysiaWorld/build/MalaysiaWorld.apk
+          if-no-files-found: error
+          retention-days: 14
