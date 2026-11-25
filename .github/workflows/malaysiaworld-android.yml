@@ -22,10 +22,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y unzip
           cd MalaysiaWorld
-          if [ -f project.zip ]; then
+          if [ -f MalaysiaWorld_Realistic_v0.3.zip ]; then
+            unzip -o MalaysiaWorld_Realistic_v0.3.zip -d .
+          elif [ -f project.zip ]; then
             unzip -o project.zip -d .
           fi
-          test -f project.godot || { echo "Missing MalaysiaWorld/project.godot. Upload the v0.3 project ZIP as MalaysiaWorld/project.zip."; exit 1; }
+          test -f project.godot || { echo "Missing MalaysiaWorld/project.godot. Ensure the v0.3 project ZIP is present in MalaysiaWorld/."; exit 1; }
           mkdir -p build
           cat > export_presets.cfg <<'EOF'
           [preset.0]
